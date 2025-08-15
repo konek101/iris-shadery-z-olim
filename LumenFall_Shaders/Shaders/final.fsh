@@ -9,5 +9,5 @@ layout(location = 0) out vec4 color;
 void main() {
 	color = texture(colortex0, texcoord);
 	color.rgb = pow(color.rgb, vec3(1.0 / 2.2));
-	color.a = 1.0; // Force alpha to 1.0 to fix hand transparency
+	color.a = 1.0; // Make final framebuffer opaque to avoid screen-wide transparency issues
 }

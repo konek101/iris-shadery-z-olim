@@ -21,8 +21,7 @@ void main() {
 		discard;
 	}
 
-	// Force alpha to 1.0 to prevent unwanted transparency on mobs and player
-	color.a = 1.0;
+	// Terrain: keep texture alpha for cutout, opaque elsewhere
 
 	lightmapData = vec4(lmcoord, 0.0, 1.0);
 	encodedNormal = vec4(normal * 0.5 + 0.5, 1.0);

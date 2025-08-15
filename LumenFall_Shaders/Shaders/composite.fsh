@@ -35,7 +35,7 @@ layout(location = 0) out vec4 color;
 const vec3 blocklightColor = vec3(1.0, 0.5, 0.08);
 const vec3 skylightColor = vec3(0.05, 0.15, 0.3);
 const vec3 sunlightColor = vec3(1.0);
-const vec3 ambientColor = vec3(0.1);
+const vec3 ambientColor = vec3(0.02);
 
 vec3 projectAndDivide(mat4 projectionMatrix, vec3 position){
 	vec4 homPos = projectionMatrix * vec4(position, 1.0);
@@ -135,12 +135,13 @@ void main() {
 
 	vec3 shadow = getSoftShadow(shadowClipPos);
 
-	vec3 blocklight = lightmap.r * blocklightColor;
-	vec3 skylight = lightmap.g * skylightColor;
-	vec3 ambient = ambientColor;
-	vec3 sunlight = sunlightColor * clamp(dot(worldLightVector, normal), 0.0, 1.0) * shadow;
+  vec3 blocklight = lightmap.r * blocklightColor;
+  vec3 skylight = lightmap.g * skylightColor;
+  // Lower ambient to avoid fullbright look in low light
+  const vec3 ambientColor = vec3(0.02);
+  vec3 ambient = ambientColor;
+  vec3 sunlight = sunlightColor * clamp(dot(worldLightVector, normal), 0.0, 1.0) * shadow;
 
-
-
-	color.rgb *= blocklight + skylight + ambient + sunlight;
+  vec3 lighting = clamp(blocklight + skylight + ambient + sunlight, 0.0, 1.0);
+  color.rgb *= lighting;
 }
