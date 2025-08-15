@@ -1,10 +1,20 @@
+// Shared engine-provided uniforms for Iris/OptiFine shader stages
 #ifndef UNIFORMS_GLSL
 #define UNIFORMS_GLSL
 
-uniform int RT_MODE;
-uniform int RT_QUALITY;
-uniform int PT_SPP;
-uniform int PT_BOUNCES;
-uniform float GI_STRENGTH;
+// G-buffers and matrices
+uniform mat4 gbufferProjection;
+uniform mat4 gbufferProjectionInverse;
+uniform mat4 gbufferModelView;
+uniform mat4 gbufferModelViewInverse;
+uniform mat4 gbufferPreviousProjection;
+uniform mat4 gbufferPreviousModelView;
+
+// Color/depth attachments
+uniform sampler2D colortex0;
+uniform sampler2D colortex1;
+uniform sampler2D colortex2;
+uniform sampler2D colortex3;
+uniform sampler2D depthtex0;
 
 #endif

@@ -1,18 +1,15 @@
 #define FINAL
 
 #include "/lib/common.glsl"
-#include "/lib/util/rt.glsl"
+#include "/lib/uniforms.glsl"
 
 varying vec2 texcoord;
 
-// Engine-provided uniforms (declared here once for this stage)
-uniform sampler2D colortex0;
-uniform sampler2D depthtex0;
-uniform mat4 gbufferProjection;
-uniform mat4 gbufferProjectionInverse;
-
 uniform float frameTimeCounter;
 uniform float frameTimeSmooth;
+
+// Include after uniforms so referenced globals are known
+#include "/lib/util/rt.glsl"
 
 void main(){
     vec2 uv = texcoord;
