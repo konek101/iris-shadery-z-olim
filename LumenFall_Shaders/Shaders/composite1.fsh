@@ -16,12 +16,18 @@ vec3 projectAndDivide(mat4 projectionMatrix, vec3 position){
   return homPos.xyz / homPos.w;
 }
 
-// Configurable fog densities (overridden by shaders.properties sliders)
+// Configurable fog (overridden by shaders.properties sliders)
 #ifndef FOG_DENSITY
-#define FOG_DENSITY 4.0
+#define FOG_DENSITY 1.0
 #endif
 #ifndef UNDERWATER_FOG_DENSITY
-#define UNDERWATER_FOG_DENSITY 8.0
+#define UNDERWATER_FOG_DENSITY 6.0
+#endif
+#ifndef FOG_START_FRAC
+#define FOG_START_FRAC 0.2
+#endif
+#ifndef UNDERWATER_FOG_START_FRAC
+#define UNDERWATER_FOG_START_FRAC 0.0
 #endif
 
 /* RENDERTARGETS: 0 */
@@ -38,10 +44,15 @@ void main() {
   vec3 NDCPos = vec3(texcoord.xy, depth) * 2.0 - 1.0;
 	vec3 viewPos = projectAndDivide(gbufferProjectionInverse, NDCPos);
 
-		float dist = length(viewPos);
-		// Separate fog densities for above water and underwater
-		float density = (isEyeInWater > 0) ? UNDERWATER_FOG_DENSITY : FOG_DENSITY;
-		float fogFactor = 1.0 - exp(-density * dist / max(far, 1e-3));
+			float dist = length(viewPos);
+			// Separate fog densities and start distance for above water and underwater
+			bool under = (isEyeInWater > 0);
+			float density = under ? UNDERWATER_FOG_DENSITY : FOG_DENSITY;
+			float startFrac = under ? UNDERWATER_FOG_START_FRAC : FOG_START_FRAC;
+
+			float distN = clamp(dist / max(far, 1e-3), 0.0, 1.0);
+			float t = clamp((distN - startFrac) / max(1.0 - startFrac, 1e-3), 0.0, 1.0);
+			float fogFactor = 1.0 - exp(-density * t);
 	fogFactor = clamp(fogFactor, 0.0, 1.0);
 
 	vec3 fogLinear = pow(fogColor, vec3(2.2));
