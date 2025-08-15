@@ -108,13 +108,18 @@ vec3 getSoftShadow(vec4 shadowClipPos){
   vec3 shadowAccum = vec3(0.0); // sum of all shadow samples
   const int samples = SHADOW_RANGE * SHADOW_RANGE * 4; // we are taking 2 * SHADOW_RANGE * 2 * SHADOW_RANGE samples
 
+  // Distance-based softness: increase kernel radius as the receiver gets farther in light space
+  vec3 baseNDC = shadowClipPos.xyz / shadowClipPos.w;
+  float depth01 = clamp(baseNDC.z * 0.5 + 0.5, 0.0, 1.0);
+  float softness = max(0.0, SHADOW_SOFTNESS) * mix(0.75, 2.5, depth01);
+
   for(int x = -SHADOW_RANGE; x < SHADOW_RANGE; x++){
     for(int y = -SHADOW_RANGE; y < SHADOW_RANGE; y++){
-      vec2 offset = vec2(x, y) * SHADOW_RADIUS / float(SHADOW_RANGE);
+      vec2 offset = vec2(x, y) * (SHADOW_RADIUS * max(0.0001, softness)) / float(SHADOW_RANGE);
       offset = rotation * offset; // rotate the sampling kernel using the rotation matrix we constructed
       offset /= shadowMapResolution; // offset in the rotated direction by the specified amount. We divide by the resolution so our offset is in terms of pixels
       vec4 offsetShadowClipPos = shadowClipPos + vec4(offset, 0.0, 0.0); // add offset
-      offsetShadowClipPos.z -= 0.001; // apply bias
+      offsetShadowClipPos.z -= SHADOW_BIAS; // apply bias
       offsetShadowClipPos.xyz = distortShadowClipPos(offsetShadowClipPos.xyz); // apply distortion
       vec3 shadowNDCPos = offsetShadowClipPos.xyz / offsetShadowClipPos.w; // convert to NDC space
       vec3 shadowScreenPos = shadowNDCPos * 0.5 + 0.5; // convert to screen space
