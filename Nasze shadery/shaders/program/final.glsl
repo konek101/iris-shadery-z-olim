@@ -13,16 +13,24 @@ uniform float frameTimeSmooth;
 
 void main(){
     vec2 uv = texcoord;
-    vec4 base = texture2D(colortex0, uv);
+    vec3 src0 = texture2D(colortex0, uv).rgb;
+    vec3 src3 = texture2D(colortex3, uv).rgb;
+    vec3 base = (dot(src3, vec3(1.0)) > 1e-3) ? src3 : src0;
 
     float depth = texture2D(depthtex0, uv).r;
-    vec3 ndc = vec3(uv*2.0-1.0, depth*2.0-1.0);
-    vec3 viewPos = (gbufferProjectionInverse * vec4(ndc,1.0)).xyz;
+    // If depth is invalid/sky, skip RT/PT and output base
+    if(depth >= 0.9999){
+        gl_FragColor = vec4(base, 1.0);
+        return;
+    }
+
+    // Proper view-space reconstruction with divide by w
+    vec3 viewPos = reconstructViewPos(uv, depth);
     vec3 ddx = dFdx(viewPos);
     vec3 ddy = dFdy(viewPos);
     vec3 normal = normalize(cross(ddx, ddy));
 
-    vec3 color = base.rgb;
+    vec3 color = base;
 
     #if RT_MODE > 0
     vec3 V = normalize(-viewPos);
