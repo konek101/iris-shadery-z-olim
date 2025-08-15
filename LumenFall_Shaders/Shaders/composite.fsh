@@ -15,7 +15,9 @@ uniform sampler2D noisetex;
 
 uniform vec3 shadowLightPosition;
 uniform mat4 gbufferModelViewInverse;
+uniform mat4 gbufferModelView;
 uniform mat4 gbufferProjectionInverse;
+uniform mat4 gbufferProjection;
 uniform mat4 shadowModelView;
 uniform mat4 shadowProjection;
 
@@ -77,6 +79,35 @@ const vec3 ambientColor = vec3(0.02) * AMBIENT_STRENGTH;
 #endif
 #ifndef EMISSIVE_STRENGTH
 #define EMISSIVE_STRENGTH 1.0 // [0.0 0.5 1.0 2.0 3.0]
+#endif
+
+// Screen-space ray features (SSR/SSGI)
+#ifndef SSR_ENABLED
+#define SSR_ENABLED 1 // [0 1]
+#endif
+#ifndef SSR_STEPS
+#define SSR_STEPS 16 // [8 16 24 32 48 64]
+#endif
+#ifndef SSR_MAX_DIST
+#define SSR_MAX_DIST 24.0 // [8.0 16.0 24.0 32.0 48.0 64.0]
+#endif
+#ifndef SSR_THICKNESS
+#define SSR_THICKNESS 0.2 // [0.02 0.05 0.1 0.2 0.4 1.0]
+#endif
+#ifndef SSR_JITTER
+#define SSR_JITTER 1 // [0 1]
+#endif
+#ifndef SSGI_ENABLED
+#define SSGI_ENABLED 1 // [0 1]
+#endif
+#ifndef SSGI_STEPS
+#define SSGI_STEPS 8 // [4 8 12 16 24]
+#endif
+#ifndef SSGI_RADIUS
+#define SSGI_RADIUS 2.0 // [0.5 1.0 2.0 4.0 6.0]
+#endif
+#ifndef SSGI_STRENGTH
+#define SSGI_STRENGTH 0.35 // [0.0 0.2 0.35 0.5 0.8 1.0]
 #endif
 
 vec3 projectAndDivide(mat4 projectionMatrix, vec3 position){
@@ -246,11 +277,85 @@ void main() {
     vec3 kd = (1.0 - F) * (1.0 - metal);
     vec3 diffuse = baseColor / 3.14159 * kd;
 
-    vec3 pbrLight = (diffuse + spec) * (sunlight + skylight + ambient) + blocklight * baseColor;
-    pbrLight *= ao;
-    pbrLight += emiss;
-    color.rgb = pbrLight;
+    vec3 direct = (diffuse + spec) * (sunlight + skylight + ambient) + blocklight * baseColor;
+    vec3 indirect = vec3(0.0);
+    #if SSGI_ENABLED
+      vec3 normalView = mat3(gbufferModelView) * normal;
+      indirect += ssgi(viewPos, normalView) * baseColor;
+    #endif
+    #if SSR_ENABLED
+      vec3 normalViewR = mat3(gbufferModelView) * normal;
+      vec3 Vv = normalize(-viewPos);
+      vec3 rcol = ssr(viewPos, Vv, normalViewR);
+      float reflWeight = (1.0 - rough*rough);
+      indirect += rcol * reflWeight;
+    #endif
+    color.rgb = (direct + indirect) * ao + emiss;
   #else
     color.rgb *= lighting;
   #endif
+}
+
+// --- Screen-space ray helpers ---
+vec3 reconstructViewPos(vec2 uv, float depth) {
+  vec3 ndc = vec3(uv*2.0-1.0, depth*2.0-1.0);
+  return projectAndDivide(gbufferProjectionInverse, ndc);
+}
+
+bool depthHit(vec2 uv, float viewZ, float thickness) {
+  float d = texture(depthtex0, uv).r;
+  vec3 vp = reconstructViewPos(uv, d);
+  return abs(vp.z - viewZ) < thickness;
+}
+
+vec3 sampleScene(vec2 uv) { return texture(colortex0, uv).rgb; }
+
+vec3 ssr(vec3 originView, vec3 viewDir, vec3 normalView) {
+  vec3 refl = reflect(viewDir, normalize(normalView));
+  vec3 pos = originView;
+  vec3 stepV = normalize(refl);
+  float stepLen = SSR_MAX_DIST / float(SSR_STEPS);
+  vec3 hitColor = vec3(0.0);
+  float hit = 0.0;
+  #if SSR_JITTER
+    float n = getNoise(texcoord).r;
+    pos += stepV * (n * stepLen);
+  #endif
+  for (int i=0;i<SSR_STEPS;i++) {
+    pos += stepV * stepLen;
+    vec3 ndc = projectAndDivide(gbufferProjection, pos);
+    vec2 uv = ndc.xy * 0.5 + 0.5;
+    if (uv.x<0.0||uv.y<0.0||uv.x>1.0||uv.y>1.0) break;
+    if (depthHit(uv, pos.z, SSR_THICKNESS)) { hit = 1.0; hitColor = sampleScene(uv); break; }
+  }
+  return mix(vec3(0.0), hitColor, hit);
+}
+
+vec3 ssgi(vec3 originView, vec3 normalView) {
+  vec3 n = normalize(normalView);
+  vec3 acc = vec3(0.0);
+  float wsum = 0.0;
+  for (int i=0;i<SSGI_STEPS;i++) {
+    float h1 = fract(getNoise(texcoord + float(i)*0.01).r + float(i)*0.37);
+    float h2 = fract(getNoise(texcoord + float(i)*0.02).g + float(i)*0.73);
+    float phi = 6.28318 * h1;
+    float cosT = sqrt(1.0 - h2);
+    float sinT = sqrt(h2);
+    vec3 dir = vec3(cos(phi)*sinT, sin(phi)*sinT, cosT);
+    // build a simple orthonormal basis around n
+    vec3 up = abs(n.z) < 0.999 ? vec3(0.0,0.0,1.0) : vec3(0.0,1.0,0.0);
+    vec3 tangent = normalize(cross(up, n));
+    vec3 bitangent = cross(n, tangent);
+    vec3 dirV = normalize(tangent*dir.x + bitangent*dir.y + n*dir.z);
+    vec3 samplePos = originView + dirV * SSGI_RADIUS;
+    vec3 ndc = projectAndDivide(gbufferProjection, samplePos);
+    vec2 uv = ndc.xy * 0.5 + 0.5;
+    if (uv.x<0.0||uv.y<0.0||uv.x>1.0||uv.y>1.0) continue;
+    vec3 c = sampleScene(uv);
+    float w = max(dot(n, dirV), 0.0);
+    acc += c * w;
+    wsum += w;
+  }
+  if (wsum < 1e-4) return vec3(0.0);
+  return acc / wsum * SSGI_STRENGTH;
 }
