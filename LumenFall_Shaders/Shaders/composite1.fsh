@@ -18,16 +18,16 @@ vec3 projectAndDivide(mat4 projectionMatrix, vec3 position){
 
 // Configurable fog (overridden by shaders.properties sliders)
 #ifndef FOG_DENSITY
-#define FOG_DENSITY 1.0
+#define FOG_DENSITY 0.5 // [0.0 0.2 0.5 1.0 2.0 4.0 6.0 10.0]
 #endif
 #ifndef UNDERWATER_FOG_DENSITY
-#define UNDERWATER_FOG_DENSITY 6.0
+#define UNDERWATER_FOG_DENSITY 6.0 // [0.0 2.0 4.0 6.0 8.0 12.0 16.0 20.0]
 #endif
 #ifndef FOG_START_FRAC
-#define FOG_START_FRAC 0.2
+#define FOG_START_FRAC 0.5 // [0.0 0.2 0.5 0.7 0.9]
 #endif
 #ifndef UNDERWATER_FOG_START_FRAC
-#define UNDERWATER_FOG_START_FRAC 0.0
+#define UNDERWATER_FOG_START_FRAC 0.0 // [0.0 0.2 0.5]
 #endif
 
 /* RENDERTARGETS: 0 */

@@ -34,16 +34,16 @@ layout(location = 0) out vec4 color;
 
 // Configurable lighting multipliers (can be overridden in shaders.properties)
 #ifndef BLOCKLIGHT_STRENGTH
-#define BLOCKLIGHT_STRENGTH 1.0
+#define BLOCKLIGHT_STRENGTH 1.0 // [0.0 0.5 1.0 1.5 2.0]
 #endif
 #ifndef SKYLIGHT_STRENGTH
-#define SKYLIGHT_STRENGTH 1.0
+#define SKYLIGHT_STRENGTH 1.0 // [0.0 0.5 1.0 1.5 2.0]
 #endif
 #ifndef SUNLIGHT_STRENGTH
-#define SUNLIGHT_STRENGTH 1.0
+#define SUNLIGHT_STRENGTH 1.0 // [0.0 0.5 1.0 1.5 2.0]
 #endif
 #ifndef AMBIENT_STRENGTH
-#define AMBIENT_STRENGTH 1.0
+#define AMBIENT_STRENGTH 1.0 // [0.0 0.25 0.5 0.75 1.0]
 #endif
 
 const vec3 blocklightColor = vec3(1.0, 0.5, 0.08) * BLOCKLIGHT_STRENGTH;
