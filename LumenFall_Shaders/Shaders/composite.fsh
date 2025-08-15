@@ -25,6 +25,10 @@ in vec2 texcoord;
 
 #include "/lib/distort.glsl"
 
+// Boolean lighting options (recognized by Iris/OptiFine, default OFF)
+// #define DIRECTIONAL_SKYLIGHT // Directionalize skylight based on upward normal. [DIRECTIONAL_SKYLIGHT]
+// #define DIRECTIONAL_BLOCKLIGHT // Add mild face variation to blocklight. [DIRECTIONAL_BLOCKLIGHT]
+
 /*
 const int colortex0Format = RGB16;
 */
@@ -154,12 +158,24 @@ void main() {
 
 	vec3 shadow = getSoftShadow(shadowClipPos);
 
+  // Base components
   vec3 blocklight = lightmap.r * blocklightColor;
   vec3 skylight = lightmap.g * skylightColor;
-  // Lower ambient to avoid fullbright look in low light
-  const vec3 ambientColor = vec3(0.02);
   vec3 ambient = ambientColor;
-  vec3 sunlight = sunlightColor * clamp(dot(worldLightVector, normal), 0.0, 1.0) * shadow;
+  float NdotL = clamp(dot(worldLightVector, normal), 0.0, 1.0);
+  vec3 sunlight = sunlightColor * NdotL * shadow;
+
+  // Directionalize skylight using a simple hemisphere term (favor upward normals)
+  #ifdef DIRECTIONAL_SKYLIGHT
+    float hemi = clamp(0.5 * (normal.y + 1.0), 0.0, 1.0);
+    skylight *= mix(0.25, 1.0, hemi);
+  #endif
+
+  // Add mild variation to blocklight by reducing lighting on top/bottom faces
+  #ifdef DIRECTIONAL_BLOCKLIGHT
+    float faceVar = 0.5 + 0.5 * (1.0 - abs(normal.y)); // brighter on vertical faces
+    blocklight *= mix(0.7, 1.0, faceVar);
+  #endif
 
   vec3 lighting = clamp(blocklight + skylight + ambient + sunlight, 0.0, 1.0);
   color.rgb *= lighting;
