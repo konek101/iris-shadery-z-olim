@@ -1,6 +1,8 @@
 #version 330 compatibility
 
 uniform sampler2D gtexture;
+uniform sampler2D normals;
+uniform sampler2D specular;
 
 uniform float alphaTestRef = 0.1;
 
@@ -9,10 +11,11 @@ in vec2 texcoord;
 in vec4 glcolor;
 in vec3 normal;
 
-/* RENDERTARGETS: 0,1,2 */
+/* RENDERTARGETS: 0,1,2,3 */
 layout(location = 0) out vec4 color;
 layout(location = 1) out vec4 lightmapData;
 layout(location = 2) out vec4 encodedNormal;
+layout(location = 3) out vec4 materialData;
 
 void main() {
 	color = texture(gtexture, texcoord) * glcolor;
@@ -21,6 +24,15 @@ void main() {
 	// Hand/first person should be fully opaque
 	color.a = 1.0;
 
+	vec3 tnorm = texture(normals, texcoord).xyz * 2.0 - 1.0;
+	if (length(tnorm) < 0.001) tnorm = normalize(normal);
+	vec4 mrme = texture(specular, texcoord);
+	float ao = mrme.r;
+	float rough = mrme.g;
+	float metal = mrme.b;
+	float emiss = mrme.a;
+
 	lightmapData = vec4(lmcoord, 0.0, 1.0);
-	encodedNormal = vec4(normal * 0.5 + 0.5, 1.0);
+	encodedNormal = vec4(tnorm * 0.5 + 0.5, 1.0);
+	materialData = vec4(rough, metal, ao, emiss);
 }
