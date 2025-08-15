@@ -32,10 +32,24 @@ const int colortex0Format = RGB16;
 /* RENDERTARGETS: 0 */
 layout(location = 0) out vec4 color;
 
-const vec3 blocklightColor = vec3(1.0, 0.5, 0.08);
-const vec3 skylightColor = vec3(0.05, 0.15, 0.3);
-const vec3 sunlightColor = vec3(1.0);
-const vec3 ambientColor = vec3(0.02);
+// Configurable lighting multipliers (can be overridden in shaders.properties)
+#ifndef BLOCKLIGHT_STRENGTH
+#define BLOCKLIGHT_STRENGTH 1.0
+#endif
+#ifndef SKYLIGHT_STRENGTH
+#define SKYLIGHT_STRENGTH 1.0
+#endif
+#ifndef SUNLIGHT_STRENGTH
+#define SUNLIGHT_STRENGTH 1.0
+#endif
+#ifndef AMBIENT_STRENGTH
+#define AMBIENT_STRENGTH 1.0
+#endif
+
+const vec3 blocklightColor = vec3(1.0, 0.5, 0.08) * BLOCKLIGHT_STRENGTH;
+const vec3 skylightColor = vec3(0.05, 0.15, 0.3) * SKYLIGHT_STRENGTH;
+const vec3 sunlightColor = vec3(1.0) * SUNLIGHT_STRENGTH;
+const vec3 ambientColor = vec3(0.02) * AMBIENT_STRENGTH;
 
 vec3 projectAndDivide(mat4 projectionMatrix, vec3 position){
 	vec4 homPos = projectionMatrix * vec4(position, 1.0);

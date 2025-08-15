@@ -5,6 +5,7 @@ uniform sampler2D depthtex0;
 
 uniform float far;
 uniform vec3 fogColor;
+uniform int isEyeInWater;
 
 uniform mat4 gbufferProjectionInverse;
 
@@ -15,7 +16,13 @@ vec3 projectAndDivide(mat4 projectionMatrix, vec3 position){
   return homPos.xyz / homPos.w;
 }
 
-#define FOG_DENSITY 12.0
+// Configurable fog densities (overridden by shaders.properties sliders)
+#ifndef FOG_DENSITY
+#define FOG_DENSITY 4.0
+#endif
+#ifndef UNDERWATER_FOG_DENSITY
+#define UNDERWATER_FOG_DENSITY 8.0
+#endif
 
 /* RENDERTARGETS: 0 */
 layout(location = 0) out vec4 color;
@@ -31,9 +38,10 @@ void main() {
   vec3 NDCPos = vec3(texcoord.xy, depth) * 2.0 - 1.0;
 	vec3 viewPos = projectAndDivide(gbufferProjectionInverse, NDCPos);
 
-	float dist = length(viewPos);
-	// Stronger attenuation to avoid underwater looking fullbright
-	float fogFactor = 1.0 - exp(-FOG_DENSITY * dist / max(far, 1e-3));
+		float dist = length(viewPos);
+		// Separate fog densities for above water and underwater
+		float density = (isEyeInWater > 0) ? UNDERWATER_FOG_DENSITY : FOG_DENSITY;
+		float fogFactor = 1.0 - exp(-density * dist / max(far, 1e-3));
 	fogFactor = clamp(fogFactor, 0.0, 1.0);
 
 	vec3 fogLinear = pow(fogColor, vec3(2.2));
