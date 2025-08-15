@@ -1,0 +1,31 @@
+# Nasze shadery language file
+
+#Screens
+screen.INFORMATION=Information
+screen.PERFORMANCE_SETTINGS=Performance Settings
+screen.LIGHTING_SETTINGS=Lighting
+screen.RTPT_SETTINGS=Ray/Path Tracing
+screen.POST_SETTINGS=Post-Processing
+
+#Options
+option.RT_MODE=Ray/Path Tracing Mode
+value.RT_MODE.0=OFF
+value.RT_MODE.1=RT Reflections (SSR)
+value.RT_MODE.2=PT Lite (1-bounce GI)
+
+option.RT_QUALITY=RT Quality
+value.RT_QUALITY.0=Potato
+value.RT_QUALITY.1=Low
+value.RT_QUALITY.2=Medium
+value.RT_QUALITY.3=High
+value.RT_QUALITY.4=Ultra
+
+option.PT_SPP=PT Samples per Frame
+option.PT_BOUNCES=Max PT Bounces
+option.PT_TEMP_ACCUM=Temporal Accumulation
+option.PT_CLAMP_FIREFLIES=Clamp Fireflies
+
+option.SSR_QUALITY=SSR Quality
+option.GI_STRENGTH=GI Strength
+option.RT_SHADOWS=RT Shadows
+option.RT_SHADOW_SAMPLES=RT Shadow Samples

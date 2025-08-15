@@ -1,0 +1,6 @@
+# Polski - Nasze shadery
+screen.RTPT_SETTINGS=Ray/Path Tracing
+option.RT_MODE=Tryb RT/PT
+value.RT_MODE.0=Wyłączone
+value.RT_MODE.1=RT Odbicia (SSR)
+value.RT_MODE.2=PT Lite (1-odbicie GI)
