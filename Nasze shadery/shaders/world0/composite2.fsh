@@ -1,3 +1,3 @@
 #version 130
 #define FRAGMENT_SHADER
-#include "/program/composite.glsl"
+#include "/program/composite2.glsl"

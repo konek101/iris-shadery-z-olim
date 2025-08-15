@@ -1,5 +1,3 @@
-#version 130
-
 #ifdef VERTEX_SHADER
 varying vec2 texcoord;
 void main(){
