@@ -6,6 +6,7 @@ out vec2 lmcoord;
 out vec2 texcoord;
 out vec4 glcolor;
 out vec3 normal;
+out vec3 worldPos;
 
 void main() {
 	gl_Position = ftransform();
@@ -13,7 +14,10 @@ void main() {
 	lmcoord = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
 	glcolor = gl_Color;
 
-	normal = gl_NormalMatrix * gl_Normal; // this gives us the normal in view space
-	normal = mat3(gbufferModelViewInverse) * normal; // this converts the normal to world/player space
+	// World-space normal and position
+	vec3 viewNormal = gl_NormalMatrix * gl_Normal;
+	normal = mat3(gbufferModelViewInverse) * viewNormal;
+	vec3 viewPos = (gl_ModelViewMatrix * gl_Vertex).xyz;
+	worldPos = (gbufferModelViewInverse * vec4(viewPos, 1.0)).xyz;
 
 }
