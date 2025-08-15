@@ -1,10 +1,7 @@
 #ifndef RT_GLSL
 #define RT_GLSL
 
-uniform sampler2D colortex0; // scene color
-uniform sampler2D depthtex0; // default depth
-uniform mat4 gbufferProjection;
-uniform mat4 gbufferProjectionInverse;
+// Uses Iris/OF-provided globals: colortex0, depthtex0, gbufferProjection, gbufferProjectionInverse
 
 vec3 projectAndDivide(mat4 projectionMatrix, vec3 position){
     vec4 homPos = projectionMatrix * vec4(position, 1.0);

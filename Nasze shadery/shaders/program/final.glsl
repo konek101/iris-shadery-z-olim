@@ -1,16 +1,9 @@
 #define FINAL
 
 #include "/lib/common.glsl"
-#include "/lib/pipelineSettings.glsl"
 #include "/lib/util/rt.glsl"
 
 varying vec2 texcoord;
-
-uniform sampler2D colortex0; // base color
-uniform sampler2D colortex1; // normals (if available) or packed
-uniform sampler2D depthtex0; // depth
-uniform mat4 gbufferProjection;
-uniform mat4 gbufferProjectionInverse;
 
 uniform float frameTimeCounter;
 uniform float frameTimeSmooth;
