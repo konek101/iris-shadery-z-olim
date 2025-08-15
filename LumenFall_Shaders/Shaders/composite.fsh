@@ -58,6 +58,11 @@ const vec3 skylightColor = vec3(0.05, 0.15, 0.3) * SKYLIGHT_STRENGTH;
 const vec3 sunlightColor = vec3(1.0) * SUNLIGHT_STRENGTH;
 const vec3 ambientColor = vec3(0.02) * AMBIENT_STRENGTH;
 
+// Shadow sampling style: 0 = Grid PCF, 1 = Ring Poisson (wzór-like)
+#ifndef SHADOW_STYLE
+#define SHADOW_STYLE 1 // [0 1]
+#endif
+
 // PBR toggles
 #ifndef PBR_ENABLED
 #define PBR_ENABLED 1 // [0 1]
@@ -68,6 +73,11 @@ const vec3 ambientColor = vec3(0.02) * AMBIENT_STRENGTH;
 #ifndef SPECULAR_STRENGTH
 #define SPECULAR_STRENGTH 1.0 // [0.0 0.5 1.0 1.5 2.0]
 #endif
+
+// Prototypes (ensure functions are known before use on strict drivers)
+vec3 ssrTrace(vec3 originView, vec3 viewDir, vec3 normalView);
+vec3 ssgiBounce(vec3 originView, vec3 normalView);
+
 #ifndef ROUGHNESS_MULT
 #define ROUGHNESS_MULT 1.0 // [0.25 0.5 1.0 1.5 2.0]
 #endif
@@ -83,7 +93,7 @@ const vec3 ambientColor = vec3(0.02) * AMBIENT_STRENGTH;
 
 // Screen-space ray features (SSR/SSGI)
 #ifndef SSR_ENABLED
-#define SSR_ENABLED 1 // [0 1]
+#define SSR_ENABLED 0 // [0 1]
 #endif
 #ifndef SSR_STEPS
 #define SSR_STEPS 16 // [8 16 24 32 48 64]
@@ -165,28 +175,52 @@ vec3 getSoftShadow(vec4 shadowClipPos){
   mat2 rotation = mat2(cosTheta, -sinTheta, sinTheta, cosTheta); // matrix to rotate the offset around the original position by the angle
 
   vec3 shadowAccum = vec3(0.0); // sum of all shadow samples
-  const int samples = SHADOW_RANGE * SHADOW_RANGE * 4; // we are taking 2 * SHADOW_RANGE * 2 * SHADOW_RANGE samples
+  int samples = 0;
 
   // Distance-based softness: increase kernel radius as the receiver gets farther in light space
   vec3 baseNDC = shadowClipPos.xyz / shadowClipPos.w;
   float depth01 = clamp(baseNDC.z * 0.5 + 0.5, 0.0, 1.0);
   float softness = max(0.0, SHADOW_SOFTNESS) * mix(0.75, 2.5, depth01);
 
-  for(int x = -SHADOW_RANGE; x < SHADOW_RANGE; x++){
-    for(int y = -SHADOW_RANGE; y < SHADOW_RANGE; y++){
-      vec2 offset = vec2(x, y) * (SHADOW_RADIUS * max(0.0001, softness)) / float(SHADOW_RANGE);
-      offset = rotation * offset; // rotate the sampling kernel using the rotation matrix we constructed
-      offset /= shadowMapResolution; // offset in the rotated direction by the specified amount. We divide by the resolution so our offset is in terms of pixels
-      vec4 offsetShadowClipPos = shadowClipPos + vec4(offset, 0.0, 0.0); // add offset
-      offsetShadowClipPos.z -= SHADOW_BIAS; // apply bias
-      offsetShadowClipPos.xyz = distortShadowClipPos(offsetShadowClipPos.xyz); // apply distortion
-      vec3 shadowNDCPos = offsetShadowClipPos.xyz / offsetShadowClipPos.w; // convert to NDC space
-      vec3 shadowScreenPos = shadowNDCPos * 0.5 + 0.5; // convert to screen space
-      shadowAccum += getShadow(shadowScreenPos); // take shadow sample
+  #if SHADOW_STYLE == 0
+    // Grid PCF sampling
+    samples = SHADOW_RANGE * SHADOW_RANGE * 4; // 2R x 2R samples
+    for(int x = -SHADOW_RANGE; x < SHADOW_RANGE; x++){
+      for(int y = -SHADOW_RANGE; y < SHADOW_RANGE; y++){
+        vec2 offset = vec2(x, y) * (SHADOW_RADIUS * max(0.0001, softness)) / float(SHADOW_RANGE);
+        offset = rotation * offset;
+  offset /= float(shadowMapResolution);
+        vec4 offsetShadowClipPos = shadowClipPos + vec4(offset, 0.0, 0.0);
+        offsetShadowClipPos.z -= SHADOW_BIAS;
+        offsetShadowClipPos.xyz = distortShadowClipPos(offsetShadowClipPos.xyz);
+        vec3 shadowNDCPos = offsetShadowClipPos.xyz / offsetShadowClipPos.w;
+        vec3 shadowScreenPos = shadowNDCPos * 0.5 + 0.5;
+        shadowAccum += getShadow(shadowScreenPos);
+      }
     }
-  }
+  #else
+    // Ring-based Poisson sampling (wzór-like soft gradient)
+    const int RINGS = 4;
+    const int PER_RING = 8; // total 32 samples
+    float baseRadius = SHADOW_RADIUS * max(0.0001, softness);
+    for(int r = 1; r <= RINGS; r++){
+      float ringR = baseRadius * (float(r) / float(RINGS));
+      for(int i = 0; i < PER_RING; i++){
+        float a = (float(i) / float(PER_RING)) * 6.2831853;
+        vec2 p = vec2(cos(a), sin(a));
+        vec2 offset = (rotation * (p * ringR)) / float(shadowMapResolution);
+        vec4 offsetShadowClipPos = shadowClipPos + vec4(offset, 0.0, 0.0);
+        offsetShadowClipPos.z -= SHADOW_BIAS;
+        offsetShadowClipPos.xyz = distortShadowClipPos(offsetShadowClipPos.xyz);
+        vec3 shadowNDCPos = offsetShadowClipPos.xyz / offsetShadowClipPos.w;
+        vec3 shadowScreenPos = shadowNDCPos * 0.5 + 0.5;
+        shadowAccum += getShadow(shadowScreenPos);
+        samples++;
+      }
+    }
+  #endif
 
-  return shadowAccum / float(samples); // divide sum by count, getting average shadow
+  return shadowAccum / max(float(samples), 1.0); // divide sum by count, getting average shadow
 }
 
 void main() {
@@ -281,12 +315,12 @@ void main() {
     vec3 indirect = vec3(0.0);
     #if SSGI_ENABLED
       vec3 normalView = mat3(gbufferModelView) * normal;
-      indirect += ssgi(viewPos, normalView) * baseColor;
+      indirect += ssgiBounce(viewPos, normalView) * baseColor;
     #endif
     #if SSR_ENABLED
       vec3 normalViewR = mat3(gbufferModelView) * normal;
       vec3 Vv = normalize(-viewPos);
-      vec3 rcol = ssr(viewPos, Vv, normalViewR);
+      vec3 rcol = ssrTrace(viewPos, Vv, normalViewR);
       float reflWeight = (1.0 - rough*rough);
       indirect += rcol * reflWeight;
     #endif
@@ -308,9 +342,13 @@ bool depthHit(vec2 uv, float viewZ, float thickness) {
   return abs(vp.z - viewZ) < thickness;
 }
 
-vec3 sampleScene(vec2 uv) { return texture(colortex0, uv).rgb; }
+// Sample and linearize (approximate) the scene color
+vec3 sampleScene(vec2 uv) {
+  vec3 srgb = texture(colortex0, uv).rgb;
+  return pow(max(srgb, 0.0), vec3(2.2));
+}
 
-vec3 ssr(vec3 originView, vec3 viewDir, vec3 normalView) {
+vec3 ssrTrace(vec3 originView, vec3 viewDir, vec3 normalView) {
   vec3 refl = reflect(viewDir, normalize(normalView));
   vec3 pos = originView;
   vec3 stepV = normalize(refl);
@@ -331,7 +369,7 @@ vec3 ssr(vec3 originView, vec3 viewDir, vec3 normalView) {
   return mix(vec3(0.0), hitColor, hit);
 }
 
-vec3 ssgi(vec3 originView, vec3 normalView) {
+vec3 ssgiBounce(vec3 originView, vec3 normalView) {
   vec3 n = normalize(normalView);
   vec3 acc = vec3(0.0);
   float wsum = 0.0;
