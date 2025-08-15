@@ -11,7 +11,6 @@ in vec2 lmcoord;
 in vec2 texcoord;
 in vec4 glcolor;
 in vec3 normal;
-in vec3 worldPos;
 
 /* RENDERTARGETS: 0,1,2,3 */
 layout(location = 0) out vec4 color;
