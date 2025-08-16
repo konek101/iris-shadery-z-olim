@@ -2,6 +2,6 @@
 
 #define VERTEX_SHADER
 #define OVERWORLD
-#define COMPOSITE
+#define COMPOSITE3
 
-#include "/program/composite.glsl"
+#include "/program/composite3.glsl"

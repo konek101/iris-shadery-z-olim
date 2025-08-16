@@ -2,5 +2,6 @@
 
 #define FRAGMENT_SHADER
 #define NETHER
+#define COMPOSITE3
 
-#include "/program/composite4.glsl"
+#include "/program/composite3.glsl"

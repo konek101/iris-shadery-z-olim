@@ -4,4 +4,4 @@
 #define NETHER
 #define FINAL
 
-#include "/program/template.glsl"
+#include "/program/final.glsl"

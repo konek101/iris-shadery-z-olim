@@ -2,5 +2,6 @@
 
 #define VERTEX_SHADER
 #define NETHER
+#define COMPOSITE
 
-#include "/program/template.glsl"
+#include "/program/composite.glsl"

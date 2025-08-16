@@ -1,5 +1,3 @@
-Nasze shadery
+# Iris Tutorial Code
 
-A lightweight shader pack with real-time RT/SSR reflections and a PT-lite 1-bounce GI option. Inspired by `wzór` settings structure.
-
-Status: Minimal skeleton. Tweak and extend.
+This repository contains reference code for each stage of the tutorials which can be found on the [Iris Documentation](https://shaders.properties).

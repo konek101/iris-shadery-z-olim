@@ -2,6 +2,6 @@
 
 #define FRAGMENT_SHADER
 #define OVERWORLD
-#define FINAL
+#define COMPOSITE3
 
-#include "/program/final.glsl"
+#include "/program/composite3.glsl"
