@@ -3,8 +3,6 @@
 #include "/lib/uniforms.glsl"
 
 varying vec2 texcoord;
-uniform sampler2D depthtex0;
-uniform sampler2D colortex0;
 
 vec3 reconstructViewPos(vec2 uv, float depth){
     vec3 ndc = vec3(uv*2.0-1.0, depth*2.0-1.0);

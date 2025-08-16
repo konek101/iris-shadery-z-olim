@@ -22,6 +22,9 @@ uniform mat4 shadowProjection;
 uniform mat4 shadowModelView;
 uniform sampler2D shadowtex0;
 
+// Timing
+uniform float frameTimeCounter;
+
 // Sun/camera
 uniform vec3 sunPosition;
 uniform vec3 moonPosition;

@@ -4,9 +4,6 @@
 
 varying vec2 texcoord;
 
-uniform sampler2D colortex0; // base color
-uniform sampler2D depthtex0; // depth
-
 float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }
 
 void main(){
