@@ -1,12 +1,7 @@
-// Composite pass for accumulation / post
+// Composite pass for routing base color
 #include "/lib/uniforms.glsl"
-#include "/lib/util/rt.glsl"
 
 varying vec2 texcoord;
-
-uniform sampler2D colortex0;
-uniform sampler2D colortex1;
-uniform sampler2D colortex2;
 
 void main(){
     vec2 uv = texcoord;
