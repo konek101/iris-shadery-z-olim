@@ -5,9 +5,6 @@
 
 varying vec2 texcoord;
 
-uniform float frameTimeCounter;
-uniform float frameTimeSmooth;
-
 // Include after uniforms so referenced globals are known
 #include "/lib/util/rt.glsl"
 
