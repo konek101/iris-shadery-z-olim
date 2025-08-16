@@ -25,6 +25,7 @@
 #define AO_ENABLE 1 //[0 1]
 #define AO_STRENGTH 0.7 //[0.0 0.3 0.5 0.7 0.9 1.0]
 #define WATER_ENABLE 0 //[0 1]
+#define SSR_WATER_ENABLE 0 //[0 1]
 
 // Volumetric Clouds & Atmosphere
 #define CLOUDS_ENABLE 1 //[0 1]
@@ -37,6 +38,8 @@
 
 // Shadow softness
 #define SHADOW_SOFTNESS 1.0 //[0.5 1.0 1.5 2.0]
+// Shadow bias to avoid acne/peter-panning
+#define SHADOW_BIAS 0.0015 //[0.0008 0.0012 0.0015 0.0020 0.0030]
 
 // Shadow quality
 #define SHADOW_PCSS_ENABLE 1 //[0 1]

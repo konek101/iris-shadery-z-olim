@@ -1,6 +1,9 @@
-// Water effects: reflections/refractions/caustics/underwater distortion
+// Water effects: SSR reflections/refractions/underwater distortion
+// Fix: use SSR from rt.glsl with Fresnel; remove noisy caustics dots
 #include "/lib/common.glsl"
 #include "/lib/uniforms.glsl"
+#include "/lib/util/rt.glsl"
+#include "/lib/util/lighting.glsl"
 
 varying vec2 texcoord;
 
@@ -12,16 +15,26 @@ void main(){
 
     #if WATER_ENABLE
         float t = frameTimeCounter;
-        vec2 wave = vec2(sin(uv.y*60.0 + t*1.6), cos(uv.x*60.0 - t*1.2))*0.0015;
-        vec2 uvd = uv + wave;
+        // Small waves to perturb normals for Fresnel and SSR
+        vec2 wave = vec2(sin(uv.y*60.0 + t*1.6), cos(uv.x*60.0 - t*1.2)) * 0.0020;
+        vec2 uvd = uv + wave * 0.5;
         vec3 refr = texture2D(colortex0, uvd).rgb;
-        // simple fake reflection: flip Y and offset
-        vec3 refl = texture2D(colortex0, vec2(uv.x, 1.0-uv.y) + wave*0.5).rgb;
-        float fres = pow(1.0 - clamp(texture2D(depthtex0, uv).r, 0.0, 1.0), 3.0);
-        base = mix(refr, refl, fres);
-        // caustics tint
-        float c = hash(floor(uv*vec2(256.0)+t));
-        base *= mix(1.0, 1.15, c*0.15);
+
+        // Reconstruct view position and direction
+        float depth = texture2D(depthtex0, uv).r;
+        vec3 viewPos = reconstructViewPos(uv, depth);
+        vec3 viewDir = normalize(-viewPos);
+        // Approximate water normal from waves in screen-space
+        vec3 n = normalize(vec3(-wave.x*80.0, 1.0, -wave.y*80.0));
+
+        vec3 colorSSR = base;
+        #if SSR_WATER_ENABLE && RT_ENABLE
+            colorSSR = applySSR(base, viewPos, viewDir, n, uv);
+        #endif
+        float NoV = max(dot(n, -viewDir), 0.0);
+        float fres = pow(1.0 - NoV, 5.0);
+        base = mix(refr, colorSSR, clamp(fres*0.9, 0.0, 0.9));
+        // Optional underwater overlay handled in terrain pass; avoid noisy dots here.
     #endif
 
     /* DRAWBUFFERS:0 */

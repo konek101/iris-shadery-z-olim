@@ -26,11 +26,12 @@ varying vec4 vertexColor;
 varying vec3 fragPos;
 varying vec3 encodedNormal;
 
+// Adjustable bias to reduce acne and detach artifacts
 float sampleShadow(vec3 wpos){
     #if SHADOW_PCSS_ENABLE
-        return computeShadowPCSS(wpos, 0.0015);
+    return computeShadowPCSS(wpos, SHADOW_BIAS);
     #else
-        return computeShadowPCF(wpos, 0.0015);
+    return computeShadowPCF(wpos, SHADOW_BIAS);
     #endif
 }
 
