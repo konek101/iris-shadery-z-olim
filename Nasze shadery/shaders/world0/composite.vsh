@@ -1,3 +1,7 @@
 #version 130
+
 #define VERTEX_SHADER
-#include "/program/template.glsl"
+#define OVERWORLD
+#define COMPOSITE
+
+#include "/program/composite.glsl"

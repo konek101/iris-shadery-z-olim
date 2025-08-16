@@ -1,46 +1,96 @@
-// Bloom (outputs blurred bright pass to colortex3)
+/////////////////////////////////////
+// Complementary Shaders by EminGT //
+/////////////////////////////////////
+
+//Common//
 #include "/lib/common.glsl"
 
-varying vec2 texcoord;
-uniform sampler2D colortex0;
+//Varyings//
+varying vec2 texCoord;
 
-vec3 brightPass(vec3 c, float threshold){
-    float l = dot(c, vec3(0.2126,0.7152,0.0722));
-    float w = smoothstep(threshold, 1.5*threshold, l);
-    return c * w;
+//////////Fragment Shader//////////Fragment Shader//////////Fragment Shader//////////
+#ifdef FRAGMENT_SHADER
+
+//Pipeline Constants//
+const bool colortex0MipmapEnabled = true;
+
+//Common Variables//
+float weight[7] = float[7](1.0, 6.0, 15.0, 20.0, 15.0, 6.0, 1.0);
+
+vec2 view = vec2(viewWidth, viewHeight);
+
+//Common Functions//
+vec3 BloomTile(float lod, vec2 offset, vec2 scaledCoord) {
+    vec3 bloom = vec3(0.0);
+    float scale = exp2(lod);
+    vec2 coord = (scaledCoord - offset) * scale;
+    float padding = 0.5 + 0.005 * scale;
+
+    if (abs(coord.x - 0.5) < padding && abs(coord.y - 0.5) < padding) {
+        for (int i = -3; i <= 3; i++) {
+            for (int j = -3; j <= 3; j++) {
+                float wg = weight[i + 3] * weight[j + 3];
+                vec2 pixelOffset = vec2(i, j) / view;
+                vec2 bloomCoord = (scaledCoord - offset + pixelOffset) * scale;
+                bloom += texture2D(colortex0, bloomCoord).rgb * wg;
+            }
+        }
+        bloom /= 4096.0;
+    }
+
+    return pow(bloom / 128.0, vec3(0.25));
 }
 
-vec3 blur9(vec2 uv, vec2 texel, float r){
-    vec3 acc = vec3(0.0);
-    float wsum = 0.0;
-    float w[5]; w[0]=0.227027; w[1]=0.1945946; w[2]=0.1216216; w[3]=0.054054; w[4]=0.016216;
-    for(int i=-4;i<=4;i++){
-        float wi = w[abs(i)];
-        vec2 off = vec2(i,0)*texel*r;
-        vec3 s = texture2D(colortex0, uv+off).rgb;
-        acc += s*wi; wsum += wi;
-    }
-    vec3 h = acc / max(wsum,1e-4);
-    acc = vec3(0.0); wsum=0.0;
-    for(int i=-4;i<=4;i++){
-        float wi = w[abs(i)];
-        vec2 off = vec2(0,i)*texel*r;
-        vec3 s = texture2D(colortex0, uv+off).rgb;
-        acc += s*wi; wsum += wi;
-    }
-    vec3 v = acc / max(wsum,1e-4);
-    return (h+v)*0.5;
-}
+//Includes//
 
-void main(){
-    vec2 texel = 1.0 / vec2(textureSize(colortex0, 0));
-    vec3 src = texture2D(colortex0, texcoord).rgb;
-    vec3 outBloom = vec3(0.0);
-    #if BLOOM
-        vec3 bright = brightPass(src, 0.8);
-        // blur uses colortex0 sampling for simplicity; could ping-pong for better quality
-        outBloom = blur9(texcoord, texel, 1.75);
+//Program//
+void main() {
+    vec3 blur = vec3(0.0);
+
+    #ifdef BLOOM
+        vec2 scaledCoord = texCoord * max(vec2(viewWidth, viewHeight) / vec2(1920.0, 1080.0), vec2(1.0));
+
+        #if defined OVERWORLD || defined END
+            blur += BloomTile(2.0, vec2(0.0      , 0.0   ), scaledCoord);
+            blur += BloomTile(3.0, vec2(0.0      , 0.26  ), scaledCoord);
+            blur += BloomTile(4.0, vec2(0.135    , 0.26  ), scaledCoord);
+            blur += BloomTile(5.0, vec2(0.2075   , 0.26  ), scaledCoord) * 0.8;
+            blur += BloomTile(6.0, vec2(0.135    , 0.3325), scaledCoord) * 0.8;
+            blur += BloomTile(7.0, vec2(0.160625 , 0.3325), scaledCoord) * 0.6;
+            blur += BloomTile(8.0, vec2(0.1784375, 0.3325), scaledCoord) * 0.4;
+        #else
+            blur += BloomTile(2.0, vec2(0.0      , 0.0   ), scaledCoord);
+            blur += BloomTile(3.0, vec2(0.0      , 0.26  ), scaledCoord);
+            blur += BloomTile(4.0, vec2(0.135    , 0.26  ), scaledCoord);
+            blur += BloomTile(5.0, vec2(0.2075   , 0.26  ), scaledCoord);
+            blur += BloomTile(6.0, vec2(0.135    , 0.3325), scaledCoord);
+            blur += BloomTile(7.0, vec2(0.160625 , 0.3325), scaledCoord);
+            blur += BloomTile(8.0, vec2(0.1784375, 0.3325), scaledCoord) * 0.6;
+        #endif
     #endif
+
     /* DRAWBUFFERS:3 */
-    gl_FragData[3] = vec4(outBloom, 1.0);
+    gl_FragData[0] = vec4(blur, 1.0);
 }
+
+#endif
+
+//////////Vertex Shader//////////Vertex Shader//////////Vertex Shader//////////
+#ifdef VERTEX_SHADER
+
+//Attributes//
+
+//Common Variables//
+
+//Common Functions//
+
+//Includes//
+
+//Program//
+void main() {
+    texCoord = gl_MultiTexCoord0.xy;
+
+    gl_Position = ftransform();
+}
+
+#endif
