@@ -6,6 +6,6 @@ varying vec2 texcoord;
 void main(){
     vec2 uv = texcoord;
     vec3 base = texture2D(colortex0, uv).rgb;
-    /* DRAWBUFFERS:3 */
-    gl_FragData[3] = vec4(base,1.0);
+    /* DRAWBUFFERS:0 */
+    gl_FragData[0] = vec4(base,1.0);
 }

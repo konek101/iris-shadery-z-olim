@@ -20,7 +20,7 @@ vec3 tonemapACES(vec3 x){
 void main(){
     vec2 uv = texcoord;
     // Safe passthrough with optional RT features below
-    vec4 outCol = texture2D(colortex3, uv);
+    vec4 outCol = texture2D(colortex0, uv);
 
     #if RT_ENABLE
         // RT/GI can be re-enabled here later once baseline is stable
