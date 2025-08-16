@@ -35,3 +35,6 @@ option.RT_SHADOW_SAMPLES=RT Shadow Samples
 option.SUNLIGHT_ENABLE=Sunlight
 option.GODRAYS=Godrays
 option.GODRAYS_INTENSITY=Godrays Intensity
+option.AO_ENABLE=Ambient Occlusion
+option.AO_STRENGTH=AO Strength
+option.WATER_ENABLE=Water Effects

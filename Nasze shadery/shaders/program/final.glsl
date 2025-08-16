@@ -21,9 +21,14 @@ void main(){
     vec2 uv = texcoord;
     // Safe passthrough with optional RT features below
     vec3 base = texture2D(colortex0, uv).rgb;
-    vec3 bloom = texture2D(colortex3, uv).rgb;
-    vec3 rays  = texture2D(colortex2, uv).rgb;
+    vec3 ao   = texture2D(colortex1, uv).rgb;
+    vec3 rays = texture2D(colortex2, uv).rgb;
+    vec3 bloom= texture2D(colortex3, uv).rgb;
     vec3 color = base;
+    // AO darkening of diffuse
+    #if AO_ENABLE
+        color *= mix(1.0, AO_STRENGTH, 1.0 - ao.r);
+    #endif
 
     #if RT_ENABLE
         // RT/GI can be re-enabled here later once baseline is stable
