@@ -1,5 +1,6 @@
 #include "/lib/uniforms.glsl"
 #include "/lib/common.glsl"
+#include "/lib/util/lighting.glsl"
 
 #ifdef VERTEX_SHADER
 varying vec2 texcoord;
@@ -25,27 +26,14 @@ varying vec4 vertexColor;
 varying vec3 fragPos;
 varying vec3 encodedNormal;
 
-float sampleShadow(vec3 wpos){
-    vec4 lc = shadowProjection * (shadowModelView * vec4(wpos, 1.0));
-    vec3 ndc = lc.xyz / max(lc.w, 1e-6);
-    vec2 suv = ndc.xy * 0.5 + 0.5;
-    if(suv.x<=0.0||suv.y<=0.0||suv.x>=1.0||suv.y>=1.0) return 1.0;
-    float rcv = ndc.z;
-    vec2 texel = 1.0 / vec2(textureSize(shadowtex0, 0));
-    float cnt=0.0;
-    for(int y=0;y<2;++y){for(int x=0;x<2;++x){
-        vec2 o = (vec2(x,y)-0.5) * texel * 1.5;
-        float d = texture2D(shadowtex0, suv+o).r*2.0-1.0;
-        cnt += (rcv <= d+0.0015) ? 1.0 : 0.0;}}
-    return cnt*0.25;
-}
+float sampleShadow(vec3 wpos){ return computeShadowPCF(wpos, 0.0015); }
 
 void main(){
     vec4 albedo = texture2D(texture, texcoord) * vertexColor;
     if(albedo.a < 0.1) discard;
 
     vec3 N = normalize(encodedNormal);
-    vec3 L = normalize(sunPosition);
+    vec3 L = normalize(getDirectionalLightDir());
     vec3 V = normalize(cameraPosition - fragPos);
     float NdotL = 0.0;
     float shadow = 1.0;
@@ -61,8 +49,9 @@ void main(){
     #endif
 
     vec3 ambient = albedo.rgb * (float(AMBIENT_MULT)/200.0) * lm;
-    vec3 sunColor = vec3(1.0, 0.97, 0.92);
-    vec3 diffuse = albedo.rgb * sunColor * NdotL * shadow;
+    vec3 sunColor = kelvinToRGB(5500.0);
+    float cloudTrans = cloudShadowAt(fragPos);
+    vec3 diffuse = albedo.rgb * sunColor * NdotL * shadow * cloudTrans;
     // Blinn-Phong specular
     vec3 H = normalize(L+V);
     float NdotH = max(dot(N,H), 0.0);

@@ -1,5 +1,6 @@
 #include "/lib/uniforms.glsl"
 #include "/lib/common.glsl"
+#include "/lib/util/lighting.glsl"
 
 #ifdef VERTEX_SHADER
 varying vec2 texcoord;
@@ -30,7 +31,7 @@ void main(){
     if(albedo.a < 0.1) discard;
 
     vec3 N = normalize(encodedNormal);
-    vec3 L = normalize(sunPosition);
+    vec3 L = normalize(getDirectionalLightDir());
     vec3 V = normalize(cameraPosition - fragPos);
     float NdotL = 0.0;
     #if SUNLIGHT_ENABLE
@@ -38,8 +39,9 @@ void main(){
     #endif
 
     vec3 ambient = albedo.rgb * (float(AMBIENT_MULT)/200.0);
-    vec3 sunColor = vec3(1.0, 0.97, 0.92);
-    vec3 diffuse = albedo.rgb * sunColor * NdotL;
+    vec3 sunColor = kelvinToRGB(5500.0);
+    float cloudTrans = cloudShadowAt(fragPos);
+    vec3 diffuse = albedo.rgb * sunColor * NdotL * cloudTrans;
     vec3 H = normalize(L+V);
     float NdotH = max(dot(N,H), 0.0);
     vec3 spec = sunColor * pow(NdotH, 64.0) * 0.05;

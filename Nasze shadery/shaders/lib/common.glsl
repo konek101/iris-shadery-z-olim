@@ -26,5 +26,22 @@
 #define AO_STRENGTH 0.7 //[0.0 0.3 0.5 0.7 0.9 1.0]
 #define WATER_ENABLE 0 //[0 1]
 
+// Volumetric Clouds & Atmosphere
+#define CLOUDS_ENABLE 1 //[0 1]
+#define CLOUD_COVERAGE 0.6 //[0.0 0.2 0.4 0.6 0.8 1.0]
+#define CLOUD_DENSITY 0.8 //[0.2 0.4 0.6 0.8 1.0]
+#define CLOUD_HEIGHT 180.0 //[80.0 120.0 160.0 180.0 220.0]
+#define CLOUD_SPEED 0.01 //[0.003 0.006 0.01 0.02]
+#define CLOUD_DETAIL 1 //[0 1]
+#define PHASE_G 0.82 //[0.0 0.5 0.7 0.82 0.9]
+
+// Shadow softness
+#define SHADOW_SOFTNESS 1.0 //[0.5 1.0 1.5 2.0]
+
+// Volumetric Fog
+#define FOG_ENABLE 1 //[0 1]
+#define FOG_DENSITY 0.02 //[0.0 0.01 0.02 0.03 0.05]
+#define FOG_HEIGHT_FALLOFF 0.0025 //[0.0 0.0015 0.0025 0.004]
+
 // RP stub for menu (not functionally used yet)
 #define RP_MODE 1 //[0 1 2 3]
