@@ -1,6 +1,8 @@
 // Screen-space godrays (light shafts) accumulating along sun direction
+// Fix: added lighting utilities include to resolve getDirectionalLightDir/cloudDensityAt
 #include "/lib/common.glsl"
 #include "/lib/uniforms.glsl"
+#include "/lib/util/lighting.glsl"
 
 varying vec2 texcoord;
 
