@@ -53,7 +53,12 @@
 
 // Water & Caustics
 #define CAUSTICS_ENABLE 1 //[0 1]
+#define CAUSTICS_TEX_ENABLE 0 //[0 1]
 #define CAUSTICS_STRENGTH 0.25 //[0.0 0.15 0.25 0.4]
+#define CAUSTICS_SPEED 0.35 //[0.1 0.25 0.35 0.5 0.7]
+#define CAUSTICS_SCALE 6.0 //[2.0 4.0 6.0 8.0 12.0]
+#define CAUSTICS_SPLIT 0.0015 //[0.0 0.001 0.0015 0.002]
+#define CAUSTICS_LUM_MASK 0.5 //[0.0 0.25 0.5 0.75 1.0]
 
 // RP stub for menu (not functionally used yet)
 #define RP_MODE 1 //[0 1 2 3]
