@@ -4,8 +4,6 @@
 
 varying vec2 texcoord;
 
-uniform sampler2D colortex0;
-uniform sampler2D depthtex0;
 
 vec3 projectAndDivide(mat4 m, vec3 p){
     vec4 h = m * vec4(p,1.0);
@@ -38,14 +36,14 @@ void main(){
             for(int i=0;i<64;i++){
                 p += stepv;
                 // break if leaving screen
-                if(any(bvec2(p.x<=0.0 || p.y<=0.0 || p.x>=1.0 || p.y>=1.0))) break;
+                if(p.x<=0.0 || p.y<=0.0 || p.x>=1.0 || p.y>=1.0) break;
                 float depth = texture2D(depthtex0, p).r;
                 // Sky mask from depth far and brightness
                 float sky = smoothstep(0.98, 1.0, depth);
                 vec3 src = texture2D(colortex0, p).rgb;
                 float bright = dot(src, vec3(0.2126,0.7152,0.0722));
-                float sample = sky * smoothstep(0.6, 1.2, bright);
-                outCol += sample * illum;
+                float samp = sky * smoothstep(0.6, 1.2, bright);
+                outCol += samp * illum;
                 illum *= decay;
             }
             outCol /= 64.0;
