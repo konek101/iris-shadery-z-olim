@@ -29,13 +29,17 @@ vec3 applySSR(vec3 base, vec3 originView, vec3 viewDir, vec3 n, vec2 uv){
         vec3 ndc = projectAndDivide(gbufferProjection, pos);
         vec2 p = ndc.xy * 0.5 + 0.5;
         if(any(bvec2(p.x<0.0 || p.y<0.0 || p.x>1.0 || p.y>1.0))) break;
-        float d = texture2D(depthtex0, p).r;
+    float d = texture2D(depthtex0, p).r;
+    if(d >= 0.9999) continue; // sky, skip
         vec3 sceneV = reconstructViewPos(p, d);
         if(abs(sceneV.z - pos.z) < thickness){ hit = 1.0; hitUV = p; break; }
     }
     if(hit>0.5){
-        // Sample reflections from a stable source (copied scene color in colortex1)
-        vec3 refl = texture2D(colortex1, hitUV).rgb;
+    // Sample reflections from the scene color
+    vec3 refl = texture2D(colortex0, hitUV).rgb;
+    // Reject near-black samples to avoid black overlays
+    float lum = dot(refl, vec3(0.2126,0.7152,0.0722));
+    if(lum < 0.005) return base;
         float fres = pow(1.0 - max(dot(normalize(-viewDir), normalize(n)), 0.0), 5.0);
         return mix(base, refl, fres);
     }
