@@ -19,6 +19,6 @@ vec3 tonemapACES(vec3 x){
 
 void main(){
     vec2 uv = texcoord;
-    // Safe passthrough of the main scene color (stability baseline)
-    gl_FragColor = texture2D(colortex0, uv);
+    // Safe passthrough from the stable base (written in composite to colortex1)
+    gl_FragColor = texture2D(colortex1, uv);
 }
