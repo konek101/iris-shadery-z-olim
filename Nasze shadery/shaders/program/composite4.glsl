@@ -1,4 +1,4 @@
-// Bloom + Tone mapping
+// Bloom (outputs blurred bright pass to colortex3)
 #include "/lib/common.glsl"
 
 varying vec2 texcoord;
@@ -32,21 +32,15 @@ vec3 blur9(vec2 uv, vec2 texel, float r){
     return (h+v)*0.5;
 }
 
-vec3 tonemapACES(vec3 x){
-    const float a=2.51; const float b=0.03; const float c=2.43; const float d=0.59; const float e=0.14;
-    return clamp((x*(a*x+b))/(x*(c*x+d)+e), 0.0, 1.0);
-}
-
 void main(){
     vec2 texel = 1.0 / vec2(textureSize(colortex0, 0));
     vec3 src = texture2D(colortex0, texcoord).rgb;
+    vec3 outBloom = vec3(0.0);
     #if BLOOM
         vec3 bright = brightPass(src, 0.8);
-        vec3 blurred = blur9(texcoord, texel, 1.75);
-        src += blurred * (BLOOM_STRENGTH);
+        // blur uses colortex0 sampling for simplicity; could ping-pong for better quality
+        outBloom = blur9(texcoord, texel, 1.75);
     #endif
-    // Exposure (simple 1.0 here; hook to sliders if desired)
-    vec3 tone = tonemapACES(src);
     /* DRAWBUFFERS:3 */
-    gl_FragData[3] = vec4(tone, 1.0);
+    gl_FragData[3] = vec4(outBloom, 1.0);
 }

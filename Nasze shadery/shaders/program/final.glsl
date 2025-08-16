@@ -18,10 +18,9 @@ vec3 tonemapACES(vec3 x){
 }
 
 void main(){
-    /* DRAWBUFFERS:0 */
     vec2 uv = texcoord;
-    // Read from a stable scene buffer written in composite (colortex1)
-    vec3 base = texture2D(colortex1, uv).rgb;
+    // Base scene color from main pipeline output
+    vec3 base = texture2D(colortex0, uv).rgb;
 
     float depth = texture2D(depthtex0, uv).r;
 
@@ -44,9 +43,11 @@ void main(){
         #endif
     }
 
-    // Tonemap only when bloom/tonemap composite is disabled
-    #if BLOOM == 0
-        color = tonemapACES(color);
+    // Add bloom from colortex3 (if available), then tonemap once
+    #if BLOOM
+        vec3 bloom = texture2D(colortex3, uv).rgb * BLOOM_STRENGTH;
+        color += bloom;
     #endif
+    color = tonemapACES(color);
     gl_FragColor = vec4(color, 1.0);
 }
