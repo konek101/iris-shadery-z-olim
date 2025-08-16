@@ -49,3 +49,7 @@ option.SHADOW_SOFTNESS=Shadow Softness
 option.FOG_ENABLE=Volumetric Fog
 option.FOG_DENSITY=Fog Density
 option.FOG_HEIGHT_FALLOFF=Fog Height Falloff
+option.SHADOW_PCSS_ENABLE=Soft Shadows (PCSS)
+option.PCSS_SAMPLES=Shadow Samples
+option.VOLUME_STEPS=Volumetric Steps
+option.RAYS_STEPS=Godrays Steps

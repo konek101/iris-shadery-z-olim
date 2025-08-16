@@ -26,7 +26,13 @@ varying vec4 vertexColor;
 varying vec3 fragPos;
 varying vec3 encodedNormal;
 
-float sampleShadow(vec3 wpos){ return computeShadowPCF(wpos, 0.0015); }
+float sampleShadow(vec3 wpos){
+    #if SHADOW_PCSS_ENABLE
+        return computeShadowPCSS(wpos, 0.0015);
+    #else
+        return computeShadowPCF(wpos, 0.0015);
+    #endif
+}
 
 void main(){
     vec4 albedo = texture2D(texture, texcoord) * vertexColor;
@@ -49,13 +55,13 @@ void main(){
     #endif
 
     vec3 ambient = albedo.rgb * (float(AMBIENT_MULT)/200.0) * lm;
-    vec3 sunColor = kelvinToRGB(5500.0);
+    vec3 sunColor; float sunInt; getLightColorIntensity(sunColor, sunInt);
     float cloudTrans = cloudShadowAt(fragPos);
-    vec3 diffuse = albedo.rgb * sunColor * NdotL * shadow * cloudTrans;
+    vec3 diffuse = albedo.rgb * sunColor * (NdotL * sunInt) * shadow * cloudTrans;
     // Blinn-Phong specular
     vec3 H = normalize(L+V);
     float NdotH = max(dot(N,H), 0.0);
-    vec3 spec = sunColor * pow(NdotH, 64.0) * 0.15 * shadow;
+    vec3 spec = sunColor * pow(NdotH, 64.0) * 0.15 * shadow * sunInt;
 
     /* DRAWBUFFERS:0 */
     gl_FragData[0] = vec4(ambient + diffuse + spec, albedo.a);

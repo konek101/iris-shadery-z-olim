@@ -33,4 +33,9 @@ uniform vec3 cameraPosition;
 // Block/entity classification (from block.properties / entity.properties)
 uniform ivec4 mc_Entity;
 
+// Weather/environment (may be provided by Iris/OptiFine; safe if unused)
+uniform int isEyeInWater; // 0 none, 1 water, 2 lava, 3 powder snow
+uniform float rainStrength; // 0..1
+uniform float wetness; // 0..1 accumulated
+
 #endif

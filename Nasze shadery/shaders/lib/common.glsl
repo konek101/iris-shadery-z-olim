@@ -38,10 +38,22 @@
 // Shadow softness
 #define SHADOW_SOFTNESS 1.0 //[0.5 1.0 1.5 2.0]
 
+// Shadow quality
+#define SHADOW_PCSS_ENABLE 1 //[0 1]
+#define PCSS_SAMPLES 2 //[1 2 3]
+
 // Volumetric Fog
 #define FOG_ENABLE 1 //[0 1]
 #define FOG_DENSITY 0.02 //[0.0 0.01 0.02 0.03 0.05]
 #define FOG_HEIGHT_FALLOFF 0.0025 //[0.0 0.0015 0.0025 0.004]
+
+// Volumetrics quality
+#define VOLUME_STEPS 16 //[8 12 16 24]
+#define RAYS_STEPS 64 //[32 48 64 96]
+
+// Water & Caustics
+#define CAUSTICS_ENABLE 1 //[0 1]
+#define CAUSTICS_STRENGTH 0.25 //[0.0 0.15 0.25 0.4]
 
 // RP stub for menu (not functionally used yet)
 #define RP_MODE 1 //[0 1 2 3]

@@ -29,11 +29,11 @@ void main(){
         vec2 dir = sunUV - uv;
         float dist = length(dir);
         if(dist > 1e-4){
-            vec2 stepv = dir / 64.0;
+            vec2 stepv = dir / float(RAYS_STEPS);
             vec2 p = uv;
             float decay = 0.95;
             float illum = GODRAYS_INTENSITY;
-            for(int i=0;i<64;i++){
+            for(int i=0;i<RAYS_STEPS;i++){
                 p += stepv;
                 // break if leaving screen
                 if(p.x<=0.0 || p.y<=0.0 || p.x>=1.0 || p.y>=1.0) break;
@@ -46,7 +46,35 @@ void main(){
                 outCol += samp * illum;
                 illum *= decay;
             }
-            outCol /= 64.0;
+            outCol /= float(RAYS_STEPS);
+        }
+    #endif
+
+    // Lightweight view-ray volumetric scattering contribution
+    #if FOG_ENABLE && CLOUDS_ENABLE
+        vec3 Ldir = normalize(getDirectionalLightDir());
+        // Sample a few points along the view ray in clip space
+        float depthC = texture2D(depthtex0, uv).r;
+        // only accumulate in air (not close geometry)
+        if(depthC > 0.6){
+            float accum = 0.0;
+            float stepT = 1.0 / float(VOLUME_STEPS);
+            for(int i=0;i<VOLUME_STEPS;i++){
+                float t = (float(i)+0.5)*stepT;
+                // reconstruct a far sample by lerping towards sky
+                vec2 sUV = mix(uv, sunUV, t);
+                float sky = smoothstep(0.9, 1.0, texture2D(depthtex0, sUV).r);
+                if(sky < 0.5) continue;
+                // approximate world position along ray: use camera forward assumption negligible for simplicity
+                vec3 world = cameraPosition + normalize(sunPosition) * (t*200.0);
+                float cd = cloudDensityAt(world);
+                // Henyey–Greenstein-like phase function (approx)
+                float cosTheta = dot(Ldir, normalize(vec3(0.0,0.0,-1.0)));
+                float g = PHASE_G;
+                float phase = (1.0 - g*g) / pow(1.0 + g*g - 2.0*g*cosTheta, 1.5);
+                accum += cd * phase;
+            }
+            outCol += accum * 0.02 * GODRAYS_INTENSITY;
         }
     #endif
 

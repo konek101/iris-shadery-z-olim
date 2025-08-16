@@ -52,7 +52,13 @@ varying vec3 fragPos;
 varying vec3 encodedNormal;
 
 // Simple 2x2 PCF shadow
-float sampleShadow(vec3 wpos){ return computeShadowPCF(wpos, 0.0015); }
+float sampleShadow(vec3 wpos){
+    #if SHADOW_PCSS_ENABLE
+        return computeShadowPCSS(wpos, 0.0015);
+    #else
+        return computeShadowPCF(wpos, 0.0015);
+    #endif
+}
 
 void main(){
     vec4 albedo = texture2D(texture, texcoord) * vertexColor;
@@ -69,14 +75,23 @@ void main(){
         shadow = sampleShadow(fragPos);
     #endif
 
-    // Ambient base, scaled by lightmap
+    // Ambient base, scaled by lightmap, soft blend
     vec3 ambient = albedo.rgb * (float(AMBIENT_MULT) / 200.0) * lm;
-    // Sunlight diffuse with shadowing (approx. 5500K late afternoon) and cloud transmittance
-    vec3 sunColor = kelvinToRGB(5500.0);
+    // Time-of-day light color and intensity
+    vec3 sunColor; float sunInt;
+    getLightColorIntensity(sunColor, sunInt);
     float cloudTrans = cloudShadowAt(fragPos);
-    vec3 sunLit = albedo.rgb * sunColor * NdotL * shadow * cloudTrans;
+    vec3 sunLit = albedo.rgb * sunColor * (NdotL * sunInt) * shadow * cloudTrans;
 
-    vec3 outCol = ambient + sunLit;
+    // Weather: darken slightly in rain and boost spec highlights (simple approximation)
+    float rain = clamp(rainStrength, 0.0, 1.0);
+    vec3 weatherTint = mix(vec3(1.0), vec3(0.92,0.94,0.98), rain*0.6);
+    vec3 outCol = (ambient + sunLit) * weatherTint;
+    // Underwater caustics on surfaces when camera underwater
+    if(isEyeInWater == 1){
+        float c = causticsAt(fragPos) * CAUSTICS_STRENGTH;
+        outCol += c * 0.6 * kelvinToRGB(5200.0);
+    }
     /* DRAWBUFFERS:0 */
     gl_FragData[0] = vec4(outCol, albedo.a);
 }

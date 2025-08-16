@@ -25,24 +25,82 @@ vec3 getDirectionalLightDir(){
     return (s.y > 0.05) ? s : m;
 }
 
+// Time-of-day light color and intensity from elevation
+void getLightColorIntensity(out vec3 Lcol, out float Lint){
+    vec3 L = normalize(getDirectionalLightDir());
+    float elev = clamp(L.y, -1.0, 1.0);
+    // Map elevation to Kelvin: warm sunrise/sunset to neutral midday; cooler at night (moon)
+    float kDay = mix(3800.0, 6500.0, smoothstep(0.0, 0.6, elev));
+    float kNight = 7000.0; // moonlight cool tint
+    float dayFactor = smoothstep(0.02, 0.2, elev); // fade in with elevation
+    float nightFactor = 1.0 - dayFactor;
+    vec3 dayCol = kelvinToRGB(kDay);
+    vec3 nightCol = kelvinToRGB(kNight) * 0.6;
+    Lcol = mix(nightCol, dayCol, dayFactor);
+    // Intensity stronger near midday, weaker at horizon/night
+    float baseI = clamp((elev + 0.1), 0.0, 1.0);
+    Lint = mix(0.12, 1.0, baseI);
+}
+
+// Percentage-closer filtering with distance-based kernel (PCF); upgraded to PCSS if enabled
+float shadowDepthAt(vec2 uv){
+    return texture2D(shadowtex0, uv).r; // 0..1
+}
+
 float computeShadowPCF(vec3 worldPos, float bias){
     vec4 lc = shadowProjection * (shadowModelView * vec4(worldPos, 1.0));
     vec3 ndc = lc.xyz / max(lc.w, 1e-6);
     vec2 uv = ndc.xy * 0.5 + 0.5;
     if(uv.x<=0.0||uv.y<=0.0||uv.x>=1.0||uv.y>=1.0) return 1.0;
-    float rcv = ndc.z - bias;
+    float rcv = ndc.z * 0.5 + 0.5 - bias;
     vec2 texel = 1.0 / vec2(textureSize(shadowtex0, 0));
-    float rad = SHADOW_SOFTNESS;
+    // Increase softness with receiver distance for pseudo-cascade effect
+    float rad = SHADOW_SOFTNESS * (1.0 + abs(ndc.z) * 1.5);
     float sum=0.0; int taps=0;
     for(int y=-1;y<=1;++y){
         for(int x=-1;x<=1;++x){
             vec2 o = vec2(x,y) * texel * rad;
-            float d = texture2D(shadowtex0, uv+o).r*2.0-1.0;
+            float d = shadowDepthAt(uv+o);
             sum += (rcv <= d) ? 1.0 : 0.0; taps++;
         }
     }
     return sum / float(taps);
 }
+
+#if SHADOW_PCSS_ENABLE
+// Simple PCSS: blocker search in a small kernel to estimate penumbra
+float computeShadowPCSS(vec3 worldPos, float bias){
+    vec4 lc = shadowProjection * (shadowModelView * vec4(worldPos, 1.0));
+    vec3 ndc = lc.xyz / max(lc.w, 1e-6);
+    vec2 uv = ndc.xy * 0.5 + 0.5;
+    if(uv.x<=0.0||uv.y<=0.0||uv.x>=1.0||uv.y>=1.0) return 1.0;
+    float rcv = ndc.z * 0.5 + 0.5 - bias;
+    vec2 texel = 1.0 / vec2(textureSize(shadowtex0, 0));
+    // Blocker search (small kernel)
+    float blockers=0.0; int bcount=0;
+    for(int y=-2;y<=2;++y){
+        for(int x=-2;x<=2;++x){
+            vec2 o = vec2(x,y) * texel * 1.0;
+            float d = shadowDepthAt(uv+o);
+            if(d < rcv){ blockers += d; bcount++; }
+        }
+    }
+    float avgBlocker = (bcount>0) ? (blockers/float(bcount)) : rcv;
+    // Penumbra proportional to receiver - blocker distance
+    float pen = clamp((rcv - avgBlocker) * 80.0, 0.5, 4.0);
+    pen *= (1.0 + abs(ndc.z) * 1.2) * SHADOW_SOFTNESS;
+    // PCF with variable kernel
+    float sum=0.0; int taps=0;
+    for(int y=-PCSS_SAMPLES; y<=PCSS_SAMPLES; ++y){
+        for(int x=-PCSS_SAMPLES; x<=PCSS_SAMPLES; ++x){
+            vec2 o = vec2(x,y) * texel * pen;
+            float d = shadowDepthAt(uv+o);
+            sum += (rcv <= d) ? 1.0 : 0.0; taps++;
+        }
+    }
+    return sum / float(taps);
+}
+#endif
 
 // --- Volumetric Clouds: simple FBM value-noise ---
 float hash12(vec2 p){
@@ -98,6 +156,32 @@ float cloudShadowAt(vec3 worldPos){
         return clamp(trans, 0.3, 1.0);
     #else
         return 1.0;
+    #endif
+}
+
+#endif
+
+// --- Water Caustics (procedural, no textures required) ---
+#ifndef CAUSTICS_UTIL_GLSL
+#define CAUSTICS_UTIL_GLSL
+
+float causticsPattern(vec2 p){
+    // Two scrolling bands to imitate interference
+    float t = frameTimeCounter;
+    float a = sin(p.x*7.1 + t*1.7) * cos(p.y*6.3 - t*1.3);
+    float b = sin((p.x+p.y)*5.7 - t*0.9) * cos((p.x-p.y)*6.9 + t*1.1);
+    float v = a*b;
+    v = smoothstep(0.2, 0.8, v*0.5+0.5);
+    return v;
+}
+
+float causticsAt(vec3 worldPos){
+    #if CAUSTICS_ENABLE
+        vec2 p = worldPos.xz * 0.35;
+        float v = causticsPattern(p);
+        return v;
+    #else
+        return 0.0;
     #endif
 }
 

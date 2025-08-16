@@ -39,14 +39,14 @@ void main(){
     #endif
 
     vec3 ambient = albedo.rgb * (float(AMBIENT_MULT)/200.0);
-    vec3 sunColor = kelvinToRGB(5500.0);
+    vec3 sunColor; float sunInt; getLightColorIntensity(sunColor, sunInt);
     float cloudTrans = cloudShadowAt(fragPos);
-    vec3 diffuse = albedo.rgb * sunColor * NdotL * cloudTrans;
+    vec3 diffuse = albedo.rgb * sunColor * (NdotL * sunInt) * cloudTrans;
     vec3 H = normalize(L+V);
     float NdotH = max(dot(N,H), 0.0);
-    vec3 spec = sunColor * pow(NdotH, 64.0) * 0.05;
+    vec3 spec = sunColor * pow(NdotH, 64.0) * 0.05 * sunInt;
 
     /* DRAWBUFFERS:0 */
-    gl_FragData[0] = vec4(ambient + diffuse + spec, albedo.a);
+    gl_FragData[0] = vec4(ambient + diffuse + spec, 1.0);
 }
 #endif
