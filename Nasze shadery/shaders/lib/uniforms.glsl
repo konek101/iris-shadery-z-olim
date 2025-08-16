@@ -30,4 +30,7 @@ uniform vec3 sunPosition;
 uniform vec3 moonPosition;
 uniform vec3 cameraPosition;
 
+// Block/entity classification (from block.properties / entity.properties)
+uniform ivec4 mc_Entity;
+
 #endif

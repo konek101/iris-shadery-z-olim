@@ -24,7 +24,7 @@
 // Ambient Occlusion & Water
 #define AO_ENABLE 1 //[0 1]
 #define AO_STRENGTH 0.7 //[0.0 0.3 0.5 0.7 0.9 1.0]
-#define WATER_ENABLE 1 //[0 1]
+#define WATER_ENABLE 0 //[0 1]
 
 // RP stub for menu (not functionally used yet)
 #define RP_MODE 1 //[0 1 2 3]

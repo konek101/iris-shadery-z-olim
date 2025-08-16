@@ -10,18 +10,34 @@ varying vec3 fragPos;           // world-space
 varying vec3 encodedNormal;     // world-space normal
 
 void main(){
-    gl_Position = ftransform();
     texcoord = (gl_TextureMatrix[0] * gl_MultiTexCoord0).xy;
     lmcoord  = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
     vertexColor = gl_Color;
 
-    // Compute world position from view-space transform
+    // Base transforms
     vec4 posVS = gbufferModelView * gl_Vertex;
-    fragPos = (gbufferModelViewInverse * posVS).xyz;
+    vec3 wpos  = (gbufferModelViewInverse * posVS).xyz;
+
+    // Leaf-only waving using block ID from block.properties (10009)
+    int blockId = mc_Entity.x;
+    if(blockId == 10009){
+        float t = frameTimeCounter;
+        // Gentle wind sway based on world position
+        float sway = sin(t*1.7 + wpos.x*0.25 + wpos.z*0.21)*0.08;
+        float lift = sin(t*2.3 + wpos.x*0.11)*0.02;
+        vec2 windDir = normalize(vec2(0.6, 0.8));
+        wpos += vec3(windDir * sway, lift);
+    }
+
+    // Write varyings from waved position
+    fragPos = wpos;
 
     // Transform normal to world
     vec3 nVS = normalize(mat3(gbufferModelView) * gl_Normal.xyz);
     encodedNormal = normalize(mat3(gbufferModelViewInverse) * nVS);
+
+    // Final position
+    gl_Position = gbufferProjection * (gbufferModelView * vec4(wpos, 1.0));
 }
 #endif
 
