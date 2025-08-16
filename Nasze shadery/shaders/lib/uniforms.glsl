@@ -17,4 +17,9 @@ uniform sampler2D colortex2;
 uniform sampler2D colortex3;
 uniform sampler2D depthtex0;
 
+// Shadow mapping (minimal set)
+uniform mat4 shadowProjection;
+uniform mat4 shadowModelView;
+uniform sampler2D shadowtex0;
+
 #endif
