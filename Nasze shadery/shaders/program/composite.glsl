@@ -10,7 +10,8 @@ uniform sampler2D colortex2;
 
 void main(){
     vec2 uv = texcoord;
-    vec3 base = texture2D(colortex0, uv).rgb;
-    /* DRAWBUFFERS:0 */
-    gl_FragData[0] = vec4(base,1.0);
+    vec3 base = texture2D(colortex0, uv).rgb; // source from prior stage
+    // Copy to colortex1 to provide a stable read source for later stages
+    /* DRAWBUFFERS:1 */
+    gl_FragData[1] = vec4(base,1.0);
 }

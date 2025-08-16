@@ -20,8 +20,8 @@ vec3 tonemapACES(vec3 x){
 void main(){
     /* DRAWBUFFERS:0 */
     vec2 uv = texcoord;
-    // Base scene color from previous pipeline stage
-    vec3 base = texture2D(colortex0, uv).rgb;
+    // Read from a stable scene buffer written in composite (colortex1)
+    vec3 base = texture2D(colortex1, uv).rgb;
 
     float depth = texture2D(depthtex0, uv).r;
 

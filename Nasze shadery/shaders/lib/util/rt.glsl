@@ -34,7 +34,8 @@ vec3 applySSR(vec3 base, vec3 originView, vec3 viewDir, vec3 n, vec2 uv){
         if(abs(sceneV.z - pos.z) < thickness){ hit = 1.0; hitUV = p; break; }
     }
     if(hit>0.5){
-        vec3 refl = texture2D(colortex0, hitUV).rgb;
+        // Sample reflections from a stable source (copied scene color in colortex1)
+        vec3 refl = texture2D(colortex1, hitUV).rgb;
         float fres = pow(1.0 - max(dot(normalize(-viewDir), normalize(n)), 0.0), 5.0);
         return mix(base, refl, fres);
     }

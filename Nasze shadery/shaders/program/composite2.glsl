@@ -73,6 +73,6 @@ void main(){
     vec3 accum = mix(curr, prev, w);
 
     /* DRAWBUFFERS:03 */
-    gl_FragData[0] = vec4(accum, 1.0);
-    gl_FragData[3] = vec4(accum, 1.0);
+    gl_FragData[0] = vec4(accum, 1.0); // keep current in colortex0
+    gl_FragData[3] = vec4(accum, 1.0); // write history to colortex3
 }
