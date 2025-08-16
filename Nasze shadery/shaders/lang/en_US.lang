@@ -9,6 +9,9 @@ screen.POST_SETTINGS=Post-Processing
 
 #Options
 option.RT_MODE=Ray/Path Tracing Mode
+option.RT_ENABLE=Ray/Path Tracing (Master Toggle)
+value.RT_ENABLE.0=Disabled
+value.RT_ENABLE.1=Enabled
 value.RT_MODE.0=OFF
 value.RT_MODE.1=RT Reflections (SSR)
 value.RT_MODE.2=PT Lite (1-bounce GI)

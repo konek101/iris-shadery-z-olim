@@ -3,7 +3,8 @@
 // Visual/Lighting baseline (kept minimal; extend as needed)
 #define AMBIENT_MULT 100 //[50 60 70 80 90 100 120 140 160 180 200]
 
-// RT/PT controls
+// RT/PT controls (master toggle + mode)
+#define RT_ENABLE 0 //[0 1]
 #define RT_MODE 0 //[0 1 2] // 0=Off, 1=RT Reflections (SSR), 2=PT Lite (1-bounce SSGI)
 #define RT_QUALITY 2 //[0 1 2 3 4]
 #define PT_SPP 2 //[0 1 2 3 4 6 8 12 16]
