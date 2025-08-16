@@ -11,5 +11,6 @@ uniform sampler2D colortex2;
 void main(){
     vec2 uv = texcoord;
     vec3 base = texture2D(colortex0, uv).rgb;
-    gl_FragColor = vec4(base,1.0);
+    /* DRAWBUFFERS:0 */
+    gl_FragData[0] = vec4(base,1.0);
 }

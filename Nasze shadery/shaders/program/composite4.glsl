@@ -47,5 +47,6 @@ void main(){
     #endif
     // Exposure (simple 1.0 here; hook to sliders if desired)
     vec3 tone = tonemapACES(src);
-    gl_FragColor = vec4(tone, 1.0);
+    /* DRAWBUFFERS:3 */
+    gl_FragData[3] = vec4(tone, 1.0);
 }

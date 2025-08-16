@@ -18,36 +18,35 @@ vec3 tonemapACES(vec3 x){
 }
 
 void main(){
+    /* DRAWBUFFERS:0 */
     vec2 uv = texcoord;
-    vec3 c0 = texture2D(colortex0, uv).rgb;
-    vec3 c3 = texture2D(colortex3, uv).rgb;
-    float l0 = dot(c0, vec3(0.2126,0.7152,0.0722));
-    float l3 = dot(c3, vec3(0.2126,0.7152,0.0722));
-    vec3 base = (l3 > l0 ? c3 : c0);
-    if(max(l0, l3) < 1e-6) base = vec3(0.02); // last-resort to avoid pure black
+    // Base scene color from previous pipeline stage
+    vec3 base = texture2D(colortex0, uv).rgb;
 
     float depth = texture2D(depthtex0, uv).r;
 
-    // Proper view-space reconstruction with divide by w
-    vec3 viewPos = reconstructViewPos(uv, depth);
-    vec3 ddx = dFdx(viewPos);
-    vec3 ddy = dFdy(viewPos);
-    vec3 normal = normalize(cross(ddx, ddy));
-
     vec3 color = base;
 
-    // If depth is invalid (sky), skip RT/PT; else apply
+    // Apply RT/PT only when depth is valid (avoid sky/cutouts)
     if(depth < 0.9999){
+        // Proper view-space reconstruction with divide by w
+        vec3 viewPos = reconstructViewPos(uv, depth);
+        vec3 ddx = dFdx(viewPos);
+        vec3 ddy = dFdy(viewPos);
+        vec3 normal = normalize(cross(ddx, ddy));
+
         #if RT_MODE > 0
-        vec3 V = normalize(-viewPos);
-        color = applySSR(color, viewPos, V, normal, uv);
+            vec3 V = normalize(-viewPos);
+            color = applySSR(color, viewPos, V, normal, uv);
             #if RT_MODE == 2
                 color += applyOneBounceGI(viewPos, normal, uv) * GI_STRENGTH;
             #endif
         #endif
     }
 
-    // Fallback tonemap to avoid overly dark linear color when composites are off
-    color = tonemapACES(color);
+    // Tonemap only when bloom/tonemap composite is disabled
+    #if BLOOM == 0
+        color = tonemapACES(color);
+    #endif
     gl_FragColor = vec4(color, 1.0);
 }
